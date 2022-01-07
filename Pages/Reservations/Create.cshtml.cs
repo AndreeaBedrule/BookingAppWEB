@@ -10,7 +10,8 @@ using BookingAppWEB.Models;
 
 namespace BookingAppWEB.Pages.Reservations
 {
-    public class CreateModel : PageModel
+    public class CreateModel : ReservationRoomsPageModel
+
     {
         private readonly BookingAppWEB.Data.BookingAppWEBContext _context;
 
@@ -22,6 +23,9 @@ namespace BookingAppWEB.Pages.Reservations
         public IActionResult OnGet()
         {
             ViewData["UserID"] = new SelectList(_context.Set<User>(), "ID", "UserName");
+            var reservation = new Reservation();
+            reservation.ReservationRooms = new List<ReservationRoom>();
+            PopulateAssignedRoomData(_context, reservation);
             return Page();
         }
 
@@ -29,17 +33,33 @@ namespace BookingAppWEB.Pages.Reservations
         public Reservation Reservation { get; set; }
 
         // To protect from overposting attacks, see https://aka.ms/RazorPagesCRUD
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostAsync(string[] selectedRooms)
         {
-            if (!ModelState.IsValid)
+            var newReservation = new Reservation();
+            if (selectedRooms != null)
             {
-                return Page();
+                newReservation.ReservationRooms = new List<ReservationRoom>();
+                foreach (var cat in selectedRooms)
+                {
+                    var catToAdd = new ReservationRoom
+                    {
+                        RoomID = int.Parse(cat)
+                    };
+                    newReservation.ReservationRooms.Add(catToAdd);
+                }
             }
-
-            _context.Reservation.Add(Reservation);
-            await _context.SaveChangesAsync();
-
-            return RedirectToPage("./Index");
+            if (await TryUpdateModelAsync<Reservation>(
+            newReservation,
+            "Reservation",
+            i => i.UserID, i => i.CheckIn,
+            i => i.CheckOut, i => i.User))
+            {
+                _context.Reservation.Add(newReservation);
+                await _context.SaveChangesAsync();
+                return RedirectToPage("./Index");
+            }
+            PopulateAssignedRoomData(_context, newReservation);
+            return Page();
         }
     }
 }

@@ -11,7 +11,7 @@ using BookingAppWEB.Models;
 
 namespace BookingAppWEB.Pages.Reservations
 {
-    public class EditModel : PageModel
+    public class EditModel : ReservationRoomsPageModel
     {
         private readonly BookingAppWEB.Data.BookingAppWEBContext _context;
 
@@ -30,49 +30,46 @@ namespace BookingAppWEB.Pages.Reservations
                 return NotFound();
             }
 
-            Reservation = await _context.Reservation.FirstOrDefaultAsync(m => m.ID == id);
+            Reservation = await _context.Reservation.Include(b => b.User).Include(b => b.ReservationRooms).ThenInclude(b => b.Room).AsNoTracking().FirstOrDefaultAsync(m => m.ID == id);
 
             if (Reservation == null)
             {
                 return NotFound();
             }
+            PopulateAssignedRoomData(_context, Reservation);
             ViewData["UserID"] = new SelectList(_context.Set<User>(), "ID", "UserName");
             return Page();
         }
 
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see https://aka.ms/RazorPagesCRUD.
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostAsync(int? id, string[] selectedRooms)
         {
-            if (!ModelState.IsValid)
+            if (id == null)
             {
-                return Page();
+                return NotFound();
             }
-
-            _context.Attach(Reservation).State = EntityState.Modified;
-
-            try
+            var reservationToUpdate = await _context.Reservation.Include(i => i.User).Include(i => i.ReservationRooms).ThenInclude(i => i.Room).FirstOrDefaultAsync(s => s.ID == id);
+            if (reservationToUpdate == null)
             {
+                return NotFound();
+            }
+            if (await TryUpdateModelAsync<Reservation>(
+            reservationToUpdate,
+            "Reservation",
+            i => i.UserID, i => i.CheckIn,
+            i => i.CheckOut, i => i.User))
+            {
+                UpdateReservationRooms(_context, selectedRooms, reservationToUpdate);
                 await _context.SaveChangesAsync();
+                return RedirectToPage("./Index");
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ReservationExists(Reservation.ID))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return RedirectToPage("./Index");
-        }
-
-        private bool ReservationExists(int id)
-        {
-            return _context.Reservation.Any(e => e.ID == id);
+            //Apelam UpdateBookCategories pentru a aplica informatiile din checkboxuri la entitatea Books care
+            //este editata
+            UpdateReservationRooms(_context, selectedRooms, reservationToUpdate);
+            PopulateAssignedRoomData(_context, reservationToUpdate);
+            return Page();
         }
     }
 }
+

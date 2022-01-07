@@ -29,13 +29,38 @@
                 <span asp-validation-for="Reservation.CheckOut" class="text-danger"></span>
             </div>
             <label asp-for="Reservation.UserID" class="control-label">User Name</label>
-            <select asp-for="Reservation.UserID" class="form-control" asp-items="ViewBag.PublisherID">
+            <select asp-for="Reservation.UserID" class="form-control" asp-items="ViewBag.UserID">
             </select>
             <span asp-validation-for="Reservation.UserID" class="text-danger"></span>
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+                <div class="table">
+                    <table>
+                        <tr>
+                            @{
+                                int cnt = 0;
+                                foreach (var cat in Model.AssignedRoomDataList)
+                                {
+                                    if (cnt++ % 3 == 0)
+                                    {
+                                    @:</tr><tr>
+                                    }
+                                    @:<td>
+                                        <input type="checkbox"
+                                               name="selectedCategories"
+                                               value="@cat.RoomID"
+                                               @(Html.Raw(cat.Assigned ? "checked=\"checked\"" : "")) />
+                                        @cat.RoomID @: @cat.Name
+                                    @:</td>
+                                }
+                            @:</tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Create" class="btn btn-primary" />
+                </div>
+            </form>
     </div>
 </div>
 
