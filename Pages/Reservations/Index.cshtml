@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/{id:int?}"
 @model BookingAppWEB.Pages.Reservations.IndexModel
 
 @{
@@ -25,12 +25,22 @@
             <th>
                 @Html.DisplayNameFor(model => model.Reservation[0].User.UserName)
             </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Reservation[0].ReservationRooms)
+            </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model.Reservation) {
-        <tr>
+        @foreach (var item in Model.ReservationD.Reservations)
+        {
+            string selectedRow = "";
+            if (item.ID == Model.ReservationID)
+            {
+                selectedRow = "table-success";
+            }
+        <tr class="@selectedRow">
+
             <td>
                 @Html.DisplayFor(modelItem => item.UserID)
             </td>
@@ -44,11 +54,19 @@
                 @Html.DisplayFor(modelItem => item.User.UserName)
             </td>
             <td>
+                @{
+                    foreach (var room in item.ReservationRooms)
+                    {
+                        @room.Room.ID @: @room.Room.RoomType <br />
+                    }
+                }
+            </td>
+            <td>
                 <a asp-page="./Edit" asp-route-id="@item.ID">Edit</a> |
                 <a asp-page="./Details" asp-route-id="@item.ID">Details</a> |
                 <a asp-page="./Delete" asp-route-id="@item.ID">Delete</a>
             </td>
         </tr>
-}
+        }
     </tbody>
 </table>
